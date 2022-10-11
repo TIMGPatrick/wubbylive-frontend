@@ -18,6 +18,7 @@ export const VideoJS = (props: any) => {
             const videoElement = placeholderEl.appendChild(
                 document.createElement("video-js")
             );
+            videoElement.classList.add('vjs-big-play-centered')
 
             if (!videoElement) return;
             const player = playerRef.current = videojs(videoElement, options, () => {
@@ -36,7 +37,7 @@ export const VideoJS = (props: any) => {
             player.src({src: videoSource, type: 'audio/x-mpegURL'});
             console.log("inside video js player else statement", player)
         }
-    }, [options, videoRef]);
+    }, [options, videoRef, videoSource, onReady]);
 
     // Dispose the Video.js player when the functional component unmounts
     React.useEffect(() => {
@@ -56,7 +57,7 @@ export const VideoJS = (props: any) => {
     //         <video ref={videoRef} className='video-js vjs-big-play-centered' />
     //     </div>
     // );
-    return (<div className={"aspect-video h-auto w-1/3 mx-auto "} ref={placeholderRef}></div>);
+    return (<div className={"aspect-video h-auto w-1/2 mx-auto"} ref={placeholderRef}></div>);
 
 }
 

@@ -39,7 +39,7 @@ export const VideoBox = (props: any) => {
     console.log()
 
     return (
-        <div>
+        <div className={"bg-amber-500 mx-auto my-5"}>
             <VideoJS options={videoJsOptions} videoSource={videoSourceProp?.hls_manifest_url} onReady={handlePlayerReady} />
         </div>
     )

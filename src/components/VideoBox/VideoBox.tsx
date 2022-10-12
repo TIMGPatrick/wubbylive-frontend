@@ -14,7 +14,7 @@ export const VideoBox = (props: any) => {
         autoplay: false,
         controls: true,
         responsive: true,
-        aspectRatio:"16:9",
+        aspectRatio: "16:9",
         // videoWidth:"1020px",
         // fluid: true,
         sources: [{
@@ -23,7 +23,7 @@ export const VideoBox = (props: any) => {
         }]
     };
 
-    const handlePlayerReady = (player:VideoJsPlayer | null) => {
+    const handlePlayerReady = (player: VideoJsPlayer | null) => {
         playerRef.current = player;
 
         // You can handle player events here, for example:
@@ -39,8 +39,9 @@ export const VideoBox = (props: any) => {
     console.log()
 
     return (
-        <div className={"bg-amber-500 mx-auto my-5"}>
-            <VideoJS options={videoJsOptions} videoSource={videoSourceProp?.hls_manifest_url} onReady={handlePlayerReady} />
+        <div className={"shadow-gray-500 drop-shadow"}>
+            <VideoJS options={videoJsOptions} videoSource={videoSourceProp?.hls_manifest_url}
+                     onReady={handlePlayerReady}/>
         </div>
     )
 }

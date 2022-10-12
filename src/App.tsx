@@ -29,27 +29,34 @@ const App = () => {
     }
 
     return (
-        <div className="App flex flex-col justify-center">
-            <div className={"mx-24 my-10 h-96 bg-green-600"}>
-                {/*<header className="App-header">*/}
-                {/*    /!*<VideoBox video={video ?? null}/>*!/*/}
-                {/*    <img src={logo} className="App-logo" alt="logo"/>*/}
-                {/*    <p>*/}
-                {/*        Edit <code>src/App.tsx</code> and save to reload.*/}
-                {/*    </p>*/}
-                {/*    <a*/}
-                {/*        className="App-link"*/}
-                {/*        href="https://reactjs.org"*/}
-                {/*        target="_blank"*/}
-                {/*        rel="noopener noreferrer"*/}
-                {/*    >*/}
-                {/*        Learn React*/}
-                {/*    </a>*/}
-                {/*</header>*/}
-                <div className={"mt-5 mx-5 bg-blue-500"}>
-                    {video !== undefined ? <VideoBox myvideo={video}/> : <h1>video unavailable</h1>}
+        <div className="App flex flex-col justify-center id='main' mx-auto">
+            <div className={"bg-gray-200 min-h-screen p-4 "}>
+                <div className={"mx-auto mt-10"}>
+                    <h1 className={"text-6xl"}>Wubby Live</h1>
                 </div>
-                {/*<VideoBox myvideo={video}></VideoBox>*/}
+                <div className={"h-full mx-auto bg-purple-400 my-10 w-full"}>
+                    <div className={"mx-auto my-auto h-auto bg-green-600 p-5"}>
+                        {/*<header className="App-header">*/}
+                        {/*    /!*<VideoBox video={video ?? null}/>*!/*/}
+                        {/*    <img src={logo} className="App-logo" alt="logo"/>*/}
+                        {/*    <p>*/}
+                        {/*        Edit <code>src/App.tsx</code> and save to reload.*/}
+                        {/*    </p>*/}
+                        {/*    <a*/}
+                        {/*        className="App-link"*/}
+                        {/*        href="https://reactjs.org"*/}
+                        {/*        target="_blank"*/}
+                        {/*        rel="noopener noreferrer"*/}
+                        {/*    >*/}
+                        {/*        Learn React*/}
+                        {/*    </a>*/}
+                        {/*</header>*/}
+                        <div className={"mx-5 bg-blue-500 p-5"}>
+                            {video !== undefined ? <VideoBox myvideo={video}/> : <h1>video unavailable</h1>}
+                        </div>
+                        {/*<VideoBox myvideo={video}></VideoBox>*/}
+                    </div>
+                </div>
             </div>
         </div>
     );

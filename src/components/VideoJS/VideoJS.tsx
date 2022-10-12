@@ -57,7 +57,7 @@ export const VideoJS = (props: any) => {
     //         <video ref={videoRef} className='video-js vjs-big-play-centered' />
     //     </div>
     // );
-    return (<div className={"aspect-video h-auto w-1/2 mx-auto"} ref={placeholderRef}></div>);
+    return (<div className={"mx-auto aspect-video h-auto w-5/6 md:w-1/2"} ref={placeholderRef}></div>);
 
 }
 

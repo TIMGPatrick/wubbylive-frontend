@@ -5,6 +5,7 @@ import React, {
 import logo from './logo.svg';
 import './App.css';
 import VideoBox from "./components/VideoBox/VideoBox";
+import {UploadVideo} from "./components/UploadVideo/UploadVideo";
 
 const App = () => {
 
@@ -57,6 +58,12 @@ const App = () => {
                         {/*<VideoBox myvideo={video}></VideoBox>*/}
                     </div>
                 </div>
+                {/*<div className={"flex flex-col justify-center items-center"}>*/}
+                {/*    <div className={"h-fit"}>*/}
+                    <UploadVideo/>
+                    {/*</div>*/}
+
+                {/*</div>*/}
             </div>
         </div>
     );

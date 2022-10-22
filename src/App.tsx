@@ -2,14 +2,13 @@ import React, {
     useEffect,
     useState
 } from 'react';
-import logo from './logo.svg';
 import './App.css';
 import VideoBox from "./components/VideoBox/VideoBox";
 import {UploadVideo} from "./components/UploadVideo/UploadVideo";
 
 const App = () => {
 
-    const [video, setVideo] = useState(undefined);
+    const [video, setVideo] = useState<any>(undefined);
 
     // const videoSource = useRef(undefined);
 
@@ -60,8 +59,8 @@ const App = () => {
                 </div>
                 {/*<div className={"flex flex-col justify-center items-center"}>*/}
                 {/*    <div className={"h-fit"}>*/}
-                    <UploadVideo/>
-                    {/*</div>*/}
+                <UploadVideo/>
+                {/*</div>*/}
 
                 {/*</div>*/}
             </div>

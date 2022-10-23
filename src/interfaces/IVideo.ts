@@ -10,5 +10,10 @@ interface IVideo {
     hls_manifest_url: string;
 }
 
+interface IFileUrlData {
+    fileName: string
+    fileType: string
+}
 
-export type {IVideo}
+
+export type {IVideo, IFileUrlData}

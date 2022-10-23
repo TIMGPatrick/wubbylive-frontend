@@ -2,23 +2,17 @@ import React, {Component, useRef, useState} from 'react';
 import uploadFileIcon from '../../public/baseline-cloud_upload-24px.svg'
 import './Dropzone.css';
 import axios from 'axios';
-import {fileTypeFromBuffer} from 'file-type';
-import {readChunk} from 'read-chunk';
+import filetype, {filetypemime} from 'magic-bytes.js'
+import {IFileUrlData} from "../../interfaces/IVideo";
 
 const Dropzone = (props: any) => {
     const videoInputRef = useRef<HTMLInputElement>(null);
     const [fileState, setFileState] = useState<string>("");
+    const [fileUrlData, setFileUrlData] = useState<IFileUrlData | null>(null)
     const [highlight, setHighlight] = useState(false)
     const [success, setSuccess] = useState(false);
     const [url, setUrl] = useState("");
 
-    const fileListToArray = (list: any) => {
-        const array = [];
-        for (let i = 0; i < list.length; i++) {
-            array.push(list.item(i));
-        }
-        return array;
-    }
 
     function renameFile(originalFile: File, newName: string) {
         return new File([originalFile], newName, {
@@ -30,29 +24,21 @@ const Dropzone = (props: any) => {
     const onFilesAdded = async (evt: any) => {
         console.log("File Added: ", evt)
         console.log("File: ", evt.target.files[0].name)
-        debugger;
         let file = evt.target.files[0]
-        console.log("File added: ", file)
         setFileState(file)
-        const buffer = await readChunk(file, {length: 4100});
-
-        let fileInfo = await fileTypeFromBuffer(buffer);
-        let fileMimeType = fileInfo?.mime;
-//=> {ext: 'png', mime: 'image/png'}
-        let fileParts = file.name.split('.')
-        // let fileType = fileParts[fileParts.length - 1];
-        // let fileType: string = "video/mp4";
-        // let fileType = "text";
-        // fileParts.pop();
-        let fileName: string = fileParts.join(".");
+        let fileName: string = file.name;
         if (props.disabled) return;
-        console.log(fileName)
-        console.log(fileMimeType)
-        console.log("request being made for signed url")
-        console.log("File Type at this point: ", fileMimeType)
-        let data = {
+
+        // Just detecting the file type from the actual file should be fine as the sources will all be trusted users.
+        console.log("File Type at this point: ", file.type)
+
+        //TODO: Check file type is accepted
+
+        //TODO: Add db logic for uploading
+
+        let data: IFileUrlData =  {
             fileName: fileName,
-            fileType: fileMimeType
+            fileType: file.type
         }
         axios.post("http://localhost:8080/api/v1/v/get-signed-url", data)
             .then(async (response: any) => {

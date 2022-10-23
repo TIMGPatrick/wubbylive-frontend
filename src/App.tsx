@@ -13,8 +13,22 @@ const App = () => {
     // const videoSource = useRef(undefined);
 
     useEffect(() => {
-        fetchVideo()
+        // fetchVideo2()
+        console.log("Fetching video works, disabling for the minute to get uploads working")
     }, []);
+
+    //
+    // async function fetchVideo2(): Promise<void> {
+    //     await ky.get("http://localhost:8080/api/v1/v/0c7b428b-915a-493e-8237-522a16d02c41")
+    //         .then(response => {
+    //             response.json().then(data => {
+    //                 console.log("within the fetchVideo function: ", data);
+    //                 setVideo(data)
+    //             }).catch(err => {
+    //                 console.log(err)
+    //             });
+    //         });
+    // }
 
     async function fetchVideo(): Promise<void> {
         await fetch("http://localhost:8080/api/v1/v/0c7b428b-915a-493e-8237-522a16d02c41")

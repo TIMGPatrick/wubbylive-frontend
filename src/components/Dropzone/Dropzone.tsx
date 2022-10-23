@@ -2,6 +2,8 @@ import React, {Component, useRef, useState} from 'react';
 import uploadFileIcon from '../../public/baseline-cloud_upload-24px.svg'
 import './Dropzone.css';
 import axios from 'axios';
+import {fileTypeFromBuffer} from 'file-type';
+import {readChunk} from 'read-chunk';
 
 const Dropzone = (props: any) => {
     const videoInputRef = useRef<HTMLInputElement>(null);
@@ -25,35 +27,42 @@ const Dropzone = (props: any) => {
         });
     }
 
-    const onFilesAdded = (evt: any) => {
+    const onFilesAdded = async (evt: any) => {
         console.log("File Added: ", evt)
         console.log("File: ", evt.target.files[0].name)
         debugger;
         let file = evt.target.files[0]
         console.log("File added: ", file)
         setFileState(file)
+        const buffer = await readChunk(file, {length: 4100});
+
+        let fileInfo = await fileTypeFromBuffer(buffer);
+        let fileMimeType = fileInfo?.mime;
+//=> {ext: 'png', mime: 'image/png'}
         let fileParts = file.name.split('.')
         // let fileType = fileParts[fileParts.length - 1];
-        let fileType = "application/octet-stream";
+        // let fileType: string = "video/mp4";
         // let fileType = "text";
         // fileParts.pop();
-        let fileName = fileParts.join(".");
+        let fileName: string = fileParts.join(".");
         if (props.disabled) return;
         console.log(fileName)
-        console.log(fileType)
+        console.log(fileMimeType)
         console.log("request being made for signed url")
-        console.log("File Type at this point: ", fileType)
+        console.log("File Type at this point: ", fileMimeType)
         let data = {
             fileName: fileName,
-            fileType: fileType
+            fileType: fileMimeType
         }
-        axios.post("http://localhost:8080/api/v1/v/get-signed-url",data )
-            .then(response => {
+        axios.post("http://localhost:8080/api/v1/v/get-signed-url", data)
+            .then(async (response: any) => {
                 console.log("success with signed url post")
-                console.log("2: File Type at this point: ", response.config.headers)
+                console.log("2: File Type at this point: ", response)
                 debugger;
                 let returnData = response.data;
+                console.log("Returned Data to filename: ", returnData)
                 let newFileName = returnData.fileName;
+                let newFileType = returnData.fileType;
                 let renamedFile = renameFile(file, newFileName)
                 // evt.target.files[0].name = newFileName
                 let url = returnData.url;
@@ -61,30 +70,27 @@ const Dropzone = (props: any) => {
                 console.log("Received a signed request " + url);
 
                 // Put the fileType in the headers for the upload
-                // const options = {
-                //     headers: {
-                //         'Content-Type': fileType
-                //     }
-                // };
+                const options = {
+                    headers: {
+                        'Content-Type': newFileType
+                    }
+                };
                 console.log("Sending file to url directly")
                 debugger;
-                // axios.put(url, renamedFile, options)
-                axios.put(url, renamedFile)
+                axios.put(url, renamedFile, options)
                     .then(result => {
                         console.log("Response from s3", result)
                         setSuccess(true);
                     })
                     .catch(error => {
                         alert("ERROR " + JSON.stringify(error));
-                        console.log(error)
+                        console.log("Error: ", error)
+                    })
+                    .catch(error => {
+                        alert(JSON.stringify({error}));
+                        console.log(JSON.stringify({error}));
                     })
             })
-            .catch(error => {
-                alert(JSON.stringify({error}));
-                console.log(JSON.stringify({error}));
-            })
-
-
     }
 
     const openFileDialog = () => {
@@ -106,7 +112,8 @@ const Dropzone = (props: any) => {
                 <div>
                     <input id="VideoInput" type="file" className={""} ref={videoInputRef}
                            onClick={openFileDialog}
-                           onChange={onFilesAdded}/>
+                           onChange={onFilesAdded}
+                           accept={"video/*"}/>
                 </div>
                 {}
                 <span>Upload Files</span>

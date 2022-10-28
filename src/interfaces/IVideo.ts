@@ -11,8 +11,12 @@ interface IVideo {
 }
 
 interface IFileUrlData {
-    fileName: string
-    fileType: string
+    fileName: string | undefined
+    fileType: string | undefined
+    userId: string | undefined
+    description: string | null
+    tags: string[] | null
+
 }
 
 

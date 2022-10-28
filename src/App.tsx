@@ -13,7 +13,7 @@ const App = () => {
     // const videoSource = useRef(undefined);
 
     useEffect(() => {
-        // fetchVideo2()
+        // fetchVideo()
         console.log("Fetching video works, disabling for the minute to get uploads working")
     }, []);
 

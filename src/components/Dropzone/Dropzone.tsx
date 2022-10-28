@@ -1,5 +1,5 @@
 import React, {Component, useRef, useState} from 'react';
-import uploadFileIcon from '../../public/baseline-cloud_upload-24px.svg'
+import {FaUpload} from 'react-icons/fa'
 import './Dropzone.css';
 import axios from 'axios';
 import filetype, {filetypemime} from 'magic-bytes.js'
@@ -7,7 +7,7 @@ import {IFileUrlData} from "../../interfaces/IVideo";
 
 const Dropzone = (props: any) => {
     const videoInputRef = useRef<HTMLInputElement>(null);
-    const [fileState, setFileState] = useState<string>("");
+    const [fileState, setFileState] = useState<File | null>(null);
     const [fileUrlData, setFileUrlData] = useState<IFileUrlData | null>(null)
     const [highlight, setHighlight] = useState(false)
     const [success, setSuccess] = useState(false);
@@ -25,20 +25,31 @@ const Dropzone = (props: any) => {
         console.log("File Added: ", evt)
         console.log("File: ", evt.target.files[0].name)
         let file = evt.target.files[0]
+        if (!file) {
+            return;
+        }
         setFileState(file)
-        let fileName: string = file.name;
+        if (!fileState) {
+            return
+        }
         if (props.disabled) return;
 
         // Just detecting the file type from the actual file should be fine as the sources will all be trusted users.
-        console.log("File Type at this point: ", file.type)
+        console.log("File Type at this point: ", fileState.type)
 
         //TODO: Check file type is accepted
 
         //TODO: Add db logic for uploading
 
+        let description = "description"
+        let tags = ["testtag", "testtag2"]
+
         let data: IFileUrlData =  {
-            fileName: fileName,
-            fileType: file.type
+            fileName: fileState.name,
+            fileType: fileState.type,
+            userId: "38a18140-40b9-4e67-81e2-fe9389b61318",
+            description: description,
+            tags: tags
         }
         axios.post("http://localhost:8080/api/v1/v/get-signed-url", data)
             .then(async (response: any) => {
@@ -49,7 +60,7 @@ const Dropzone = (props: any) => {
                 console.log("Returned Data to filename: ", returnData)
                 let newFileName = returnData.fileName;
                 let newFileType = returnData.fileType;
-                let renamedFile = renameFile(file, newFileName)
+                let renamedFile = renameFile(fileState, newFileName)
                 // evt.target.files[0].name = newFileName
                 let url = returnData.url;
                 setUrl(url)
@@ -90,11 +101,7 @@ const Dropzone = (props: any) => {
             <div
                 className={"h-full w-full border-dashed border-radius rounded-lg bg-gray-300 border-4 flex items-center justify-center text-center content-center flex-col text-xs lg:text-2xl"}
                 id={`Dropzone ${highlight ? "Highlight" : ""}`}>
-                <img
-                    alt="upload"
-                    className="h-24 w-24 opacity-30"
-                    src={uploadFileIcon}
-                />
+                <FaUpload className="h-24 w-24 opacity-30" />
                 <div>
                     <input id="VideoInput" type="file" className={""} ref={videoInputRef}
                            onClick={openFileDialog}

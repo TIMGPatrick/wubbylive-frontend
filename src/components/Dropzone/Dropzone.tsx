@@ -7,11 +7,13 @@ import {IFileUrlData} from "../../interfaces/IVideo";
 
 const Dropzone = (props: any) => {
     const videoInputRef = useRef<HTMLInputElement>(null);
-    const [fileState, setFileState] = useState<File | null>(null);
+    // const [fileState, setFileState] = useState<File | null>(null);
     const [fileUrlData, setFileUrlData] = useState<IFileUrlData | null>(null)
     const [highlight, setHighlight] = useState(false)
     const [success, setSuccess] = useState(false);
-    const [url, setUrl] = useState("");
+    // const [url, setUrl] = useState("");
+    let fileState: File | null = null;
+    let url: string = "";
 
 
     function renameFile(originalFile: File, newName: string) {
@@ -23,23 +25,18 @@ const Dropzone = (props: any) => {
 
     const onFilesAdded = async (evt: any) => {
         try {
+            fileState = null
+            url = ""
             console.log("File Added: ", evt)
             console.log("File: ", evt.target.files[0].name)
-            let file = evt.target.files[0]
-            if (!file) {
+            fileState = evt.target.files[0]
+            if (!fileState) {
                 console.log("File 2: ", evt.target.files[0].name)
                 return;
             }
-            setFileState(file)
             console.log("File 3: ", evt.target.files[0].name)
-            if (!fileState) {
-                console.log("File 4: ", evt.target.files[0].name)
-                console.log("File in state hook: ", fileState)
-                return
-            }
             console.log("File 5: ", evt.target.files[0].name)
             if (props.disabled) return;
-
             // Just detecting the file type from the actual file should be fine as the sources will all be trusted users.
             console.log("File Type at this point: ", fileState.type)
 
@@ -65,12 +62,20 @@ const Dropzone = (props: any) => {
                     debugger;
                     let returnData = response.data;
                     console.log("Returned Data to filename: ", returnData)
-                    let newFileName = returnData.fileName;
+                    let newFileName = returnData.filePath;
                     let newFileType = returnData.fileType;
+                    if (!fileState) {
+                        console.log("fileState is null")
+                        return
+                    }
                     let renamedFile = renameFile(fileState, newFileName)
                     // evt.target.files[0].name = newFileName
-                    let url = returnData.url;
-                    setUrl(url)
+                    url = returnData.url;
+                    if (url === "") {
+                        console.log("url is empty")
+                        return
+                    }
+
                     console.log("Received a signed request " + url);
 
                     // Put the fileType in the headers for the upload

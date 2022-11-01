@@ -2,8 +2,10 @@ import React, {Component, useRef, useState} from 'react';
 import {FaUpload} from 'react-icons/fa'
 import './Dropzone.css';
 import axios from 'axios';
-import filetype, {filetypemime} from 'magic-bytes.js'
 import {IFileUrlData} from "../../interfaces/IVideo";
+import {PreviousUpload} from "tus-js-client";
+
+const tus = require('tus-js-client');
 
 const Dropzone = (props: any) => {
     const videoInputRef = useRef<HTMLInputElement>(null);
@@ -13,7 +15,9 @@ const Dropzone = (props: any) => {
     const [success, setSuccess] = useState(false);
     // const [url, setUrl] = useState("");
     let fileState: File | null = null;
+    let renamedFile: File | null = null;
     let url: string = "";
+    let options: any = null
 
 
     function renameFile(originalFile: File, newName: string) {
@@ -25,7 +29,10 @@ const Dropzone = (props: any) => {
 
     const onFilesAdded = async (evt: any) => {
         try {
+            debugger;
             fileState = null
+            renamedFile = null
+            options = null
             url = ""
             console.log("File Added: ", evt)
             console.log("File: ", evt.target.files[0].name)
@@ -50,7 +57,7 @@ const Dropzone = (props: any) => {
             let data: IFileUrlData = {
                 fileName: fileState.name,
                 fileType: fileState.type,
-                userId: "38a18140-40b9-4e67-81e2-fe9389b61318",
+                userId: "0f7b977a-59b2-4c6f-b448-98a8be696065",
                 description: description,
                 tags: tags
             }
@@ -68,9 +75,11 @@ const Dropzone = (props: any) => {
                         console.log("fileState is null")
                         return
                     }
-                    let renamedFile = renameFile(fileState, newFileName)
+                    console.log("fileState name: ", fileState)
+                    renamedFile = renameFile(fileState, newFileName)
                     // evt.target.files[0].name = newFileName
                     url = returnData.url;
+                    console.log(url)
                     if (url === "") {
                         console.log("url is empty")
                         return
@@ -79,26 +88,28 @@ const Dropzone = (props: any) => {
                     console.log("Received a signed request " + url);
 
                     // Put the fileType in the headers for the upload
-                    const options = {
-                        headers: {
-                            'Content-Type': newFileType
-                        }
+                    options = {
+                        'Content-Type': newFileType
                     };
+                    // options = {
+                    //     headers: {
+                    //         'Content-Type': newFileType
+                    //     }
+                    // };
                     console.log("Sending file to url directly")
-                    debugger;
-                    axios.put(url, renamedFile, options)
-                        .then(result => {
-                            console.log("Response from s3", result)
-                            setSuccess(true);
-                        })
-                        .catch(error => {
-                            alert("ERROR " + JSON.stringify(error));
-                            console.log("Error: ", error)
-                        })
-                        .catch(error => {
-                            alert(JSON.stringify({error}));
-                            console.log(JSON.stringify({error}));
-                        })
+                    // axios.put(url, renamedFile, options)
+                    //     .then(result => {
+                    //         console.log("Response from s3", result)
+                    //         setSuccess(true);
+                    //     })
+                    //     .catch(error => {
+                    //         alert("ERROR " + JSON.stringify(error));
+                    //         console.log("Error: ", error)
+                    //     })
+                    //     .catch(error => {
+                    //         alert(JSON.stringify({error}));
+                    //         console.log(JSON.stringify({error}));
+                    //     })
                 })
         } catch (err) {
             console.log(err)
@@ -106,25 +117,89 @@ const Dropzone = (props: any) => {
 
     }
 
+    function uploadButton() {
+        // Get the selected file from the input element
+        console.log("Upload clicked")
+        if (!renamedFile || !url || !options) {
+            return
+        }
+        debugger;
+        console.log("URL right before tus", url)
+        // Create a new tus upload
+        // url = "https://tusd.tusdemo.net/files/"
+        debugger;
+        let upload = new tus.Upload(renamedFile, {
+            // Chunk size for size of the requests to upload
+            chunkSize: 5 * 1024 * 1024,
+            // Endpoint is the upload creation URL from your tus server
+            endpoint: url,
+            headers: options,
+            // Retry delays will enable tus-js-client to automatically retry on errors
+            retryDelays: [0, 3000, 5000, 10000, 20000],
+            // Attach additional meta data about the file for the server
+            metadata: {
+                filename: renamedFile.name,
+                filetype: renamedFile.type
+            },
+            // // Callback for errors which cannot be fixed using retries
+            onError: function (error: any) {
+                console.log("Failed because: " + error)
+            },
+            // // Callback for reporting upload progress
+            // onProgress: function (bytesUploaded: number, bytesTotal: number) {
+            //     let percentage = (bytesUploaded / bytesTotal * 100).toFixed(2)
+            //     console.log(bytesUploaded, bytesTotal, percentage + "%")
+            // },
+            // Callback for once the upload is completed
+            onSuccess: function () {
+                console.log("Download %s from %s", upload.file.name, upload.url)
+            }
+        })
+
+        console.log("upload object: ", upload)
+
+        // Check if there are any previous uploads to continue.
+        // upload.findPreviousUploads().then(function (previousUploads: any) {
+        //     // Found previous uploads so we select the first one.
+        //     if (previousUploads.length) {
+        //         upload.resumeFromPreviousUpload(previousUploads[0])
+        //     }
+        //
+        //     // Start the upload
+        //     try {
+        //         upload.start()
+        //     } catch (err) {
+        //         console.log("WHy will this not work",err)
+        //     }
+        // })
+        upload.start()
+    }
+
+
     const openFileDialog = () => {
         if (props.disabled) return;
         videoInputRef.current?.click();
     }
 
     return (
-        <div onClick={openFileDialog} style={{cursor: props.disabled ? "default" : "pointer"}}
-             className={"h-full w-full"}>
-            <div
-                className={"h-full w-full border-dashed border-radius rounded-lg bg-gray-300 border-4 flex items-center justify-center text-center content-center flex-col text-xs lg:text-2xl"}
-                id={`Dropzone ${highlight ? "Highlight" : ""}`}>
-                <FaUpload className="h-24 w-24 opacity-30"/>
-                <div>
-                    <input id="VideoInput" type="file" className={""} ref={videoInputRef}
-                           onClick={openFileDialog}
-                           onChange={onFilesAdded}
-                           accept={"video/*"}/>
+        <div>
+            <div onClick={openFileDialog} style={{cursor: props.disabled ? "default" : "pointer"}}
+                 className={"h-full w-full"}>
+                <div
+                    className={"h-full w-full border-dashed border-radius rounded-lg bg-gray-300 border-4 flex items-center justify-center text-center content-center flex-col text-xs lg:text-2xl"}
+                    id={`Dropzone ${highlight ? "Highlight" : ""}`}>
+                    <FaUpload className="h-24 w-24 opacity-30"/>
+                    <div>
+                        <input id="VideoInput" type="file" className={""} ref={videoInputRef}
+                               onClick={openFileDialog}
+                               onChange={onFilesAdded}
+                               accept={"video/*"}/>
+                    </div>
+                    <span>Upload Files</span>
                 </div>
-                <span>Upload Files</span>
+            </div>
+            <div className={"mx-auto mt-10 p-5"}>
+                <button onClick={uploadButton}>Upload File</button>
             </div>
         </div>
     );

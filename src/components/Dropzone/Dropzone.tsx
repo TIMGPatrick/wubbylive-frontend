@@ -4,6 +4,7 @@ import './Dropzone.css';
 import axios from 'axios';
 import filetype, {filetypemime} from 'magic-bytes.js'
 import {IFileUrlData} from "../../interfaces/IVideo";
+import {Uploader} from "../../helpers/uploader"
 
 const Dropzone = (props: any) => {
     const videoInputRef = useRef<HTMLInputElement>(null);
@@ -11,6 +12,7 @@ const Dropzone = (props: any) => {
     const [fileUrlData, setFileUrlData] = useState<IFileUrlData | null>(null)
     const [highlight, setHighlight] = useState(false)
     const [success, setSuccess] = useState(false);
+    const [uploader, setUploader] = useState<Uploader | undefined>(undefined)
     // const [url, setUrl] = useState("");
     let fileState: File | null = null;
     let url: string = "";
@@ -50,12 +52,12 @@ const Dropzone = (props: any) => {
             let data: IFileUrlData = {
                 fileName: fileState.name,
                 fileType: fileState.type,
-                userId: "38a18140-40b9-4e67-81e2-fe9389b61318",
+                userId: "0f7b977a-59b2-4c6f-b448-98a8be696065",
                 description: description,
                 tags: tags
             }
             console.log("hitting backend")
-            axios.post("http://localhost:8080/api/v1/v/get-signed-url", data)
+            axios.post("http://localhost:8080/api/v1/v/upload/get-signed-url", data)
                 .then(async (response: any) => {
                     console.log("success with signed url post")
                     console.log("2: File Type at this point: ", response)
@@ -86,19 +88,44 @@ const Dropzone = (props: any) => {
                     };
                     console.log("Sending file to url directly")
                     debugger;
-                    axios.put(url, renamedFile, options)
-                        .then(result => {
-                            console.log("Response from s3", result)
-                            setSuccess(true);
+                    let percentage = 0
+                    let videoUploaderOptions = {
+                        fileName: newFileName,
+                        file: renamedFile,
+                        chunkSize: 1024 * 1024 * 5,
+                        threadsQuantity: 5
+                    }
+                    const uploader = new Uploader(videoUploaderOptions)
+                    setUploader(uploader)
+                    uploader
+                    // @ts-ignore
+                        .onProgress(({ percentage: newPercentage }) => {
+                            // to avoid the same percentage to be logged twice
+                            if (newPercentage !== percentage) {
+                                percentage = newPercentage
+                                console.log(`${percentage}%`)
+                            }
                         })
-                        .catch(error => {
-                            alert("ERROR " + JSON.stringify(error));
-                            console.log("Error: ", error)
+                        .onError((error:any) => {
+                            console.error(error)
                         })
-                        .catch(error => {
-                            alert(JSON.stringify({error}));
-                            console.log(JSON.stringify({error}));
-                        })
+
+                    uploader.start()
+
+
+                    // axios.put(url, renamedFile, options)
+                    //     .then(result => {
+                    //         console.log("Response from s3", result)
+                    //         setSuccess(true);
+                    //     })
+                    //     .catch(error => {
+                    //         alert("ERROR " + JSON.stringify(error));
+                    //         console.log("Error: ", error)
+                    //     })
+                    //     .catch(error => {
+                    //         alert(JSON.stringify({error}));
+                    //         console.log(JSON.stringify({error}));
+                    //     })
                 })
         } catch (err) {
             console.log(err)

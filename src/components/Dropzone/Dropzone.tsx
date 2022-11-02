@@ -97,19 +97,19 @@ const Dropzone = (props: any) => {
                     //     }
                     // };
                     console.log("Sending file to url directly")
-                    // axios.put(url, renamedFile, options)
-                    //     .then(result => {
-                    //         console.log("Response from s3", result)
-                    //         setSuccess(true);
-                    //     })
-                    //     .catch(error => {
-                    //         alert("ERROR " + JSON.stringify(error));
-                    //         console.log("Error: ", error)
-                    //     })
-                    //     .catch(error => {
-                    //         alert(JSON.stringify({error}));
-                    //         console.log(JSON.stringify({error}));
-                    //     })
+                    axios.post(url, renamedFile, options)
+                        .then(result => {
+                            console.log("Response from s3", result)
+                            setSuccess(true);
+                        })
+                        .catch(error => {
+                            alert("ERROR " + error);
+                            console.log("Error: ", error)
+                        })
+                        .catch(error => {
+                            alert(JSON.stringify({error}));
+                            console.log(JSON.stringify({error}));
+                        })
                 })
         } catch (err) {
             console.log(err)
@@ -128,19 +128,22 @@ const Dropzone = (props: any) => {
         // Create a new tus upload
         // url = "https://tusd.tusdemo.net/files/"
         debugger;
+        console.log(renamedFile)
+        console.log("File name: ", renamedFile)
+        console.log("File url: ",url)
         let upload = new tus.Upload(renamedFile, {
             // Chunk size for size of the requests to upload
-            chunkSize: 5 * 1024 * 1024,
+            // chunkSize: 5 * 1024 * 1024,
             // Endpoint is the upload creation URL from your tus server
             endpoint: url,
-            headers: options,
+            // headers: options,
             // Retry delays will enable tus-js-client to automatically retry on errors
-            retryDelays: [0, 3000, 5000, 10000, 20000],
+            // retryDelays: [0, 3000, 5000, 10000, 20000],
             // Attach additional meta data about the file for the server
-            metadata: {
-                filename: renamedFile.name,
-                filetype: renamedFile.type
-            },
+            // metadata: {
+            //     filename: renamedFile.name,
+            //     filetype: renamedFile.type
+            // },
             // // Callback for errors which cannot be fixed using retries
             onError: function (error: any) {
                 console.log("Failed because: " + error)
@@ -159,20 +162,20 @@ const Dropzone = (props: any) => {
         console.log("upload object: ", upload)
 
         // Check if there are any previous uploads to continue.
-        // upload.findPreviousUploads().then(function (previousUploads: any) {
-        //     // Found previous uploads so we select the first one.
-        //     if (previousUploads.length) {
-        //         upload.resumeFromPreviousUpload(previousUploads[0])
-        //     }
-        //
-        //     // Start the upload
-        //     try {
-        //         upload.start()
-        //     } catch (err) {
-        //         console.log("WHy will this not work",err)
-        //     }
-        // })
-        upload.start()
+        upload.findPreviousUploads().then(function (previousUploads: any) {
+            // Found previous uploads so we select the first one.
+            if (previousUploads.length) {
+                upload.resumeFromPreviousUpload(previousUploads[0])
+            }
+
+            // Start the upload
+            try {
+                upload.start()
+            } catch (err) {
+                console.log("WHy will this not work",err)
+            }
+        })
+        // upload.start()
     }
 
 

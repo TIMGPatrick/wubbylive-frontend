@@ -21,7 +21,7 @@ class Uploader {
     private fileId: null;
     private fileKey: null;
     private onProgressFn: any;
-    private onErrorFn:any;
+    private onErrorFn: any;
     private fileExt = "";
 
     constructor(options: { chunkSize: number; threadsQuantity: any; file: any; fileName: any; }) {
@@ -41,7 +41,7 @@ class Uploader {
         this.uploadedParts = []
         this.fileId = null
         this.fileKey = null
-        this.onProgressFn = ():any => {
+        this.onProgressFn = (): any => {
         }
         this.onErrorFn = () => {
         }
@@ -292,7 +292,7 @@ class Uploader {
         })
     }
 
-    onProgress(onProgress:any) {
+    onProgress(onProgress: any) {
         this.onProgressFn = onProgress
         return this
     }

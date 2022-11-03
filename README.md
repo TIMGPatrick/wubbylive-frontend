@@ -49,6 +49,5 @@ To learn React, check out the [React documentation](https://reactjs.org/).
 
 ### Notes
 configured a way to get multipart uploading working following this tutorial: https://blog.logrocket.com/multipart-uploads-s3-node-js-react/. 
-still took some configuring but it appears to be working. 
-Not fully asynchronously though actually. The splitting of the file into parts on the backend
-with number headers does not work. that bit happens once after another
+This is also good I think for how the multipart uploading works. going to test times with a video to see if it is faster.
+or not than normal branch I made.

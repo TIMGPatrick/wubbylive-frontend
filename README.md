@@ -44,3 +44,11 @@ You don’t have to ever use `eject`. The curated feature set is suitable for sm
 You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
 
 To learn React, check out the [React documentation](https://reactjs.org/).
+
+<br/>
+
+### Notes
+configured a way to get multipart uploading working following this tutorial: https://blog.logrocket.com/multipart-uploads-s3-node-js-react/. 
+still took some configuring but it appears to be working. 
+Not fully asynchronously though actually. The splitting of the file into parts on the backend
+with number headers does not work. that bit happens once after another

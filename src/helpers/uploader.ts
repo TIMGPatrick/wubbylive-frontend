@@ -1,264 +1,28 @@
-// const uploader = function () {
-//     function Uploader(this:any) {
-//         this.chunkSize = 1024 * 1024;
-//         this.threadsQuantity = 2;
-//
-//         this.file = null;
-//         this.aborted = false;
-//         this.uploadedSize = 0;
-//         this.progressCache = {};
-//         this.activeConnections = {};
-//     }
-//
-//     Uploader.prototype.setOptions = function(options = {
-//         chunkSize: 1024*1024,
-//         threadsQuantity: 2
-//     }) {
-//         this.chunkSize = options.chunkSize;
-//         this.threadsQuantity = options.threadsQuantity;
-//     }
-//
-//     Uploader.prototype.setupFile = function(file:File) {
-//         if (!file) {
-//             return;
-//         }
-//
-//         this.file = file;
-//     }
-//
-//     Uploader.prototype.start = function() {
-//         if (!this.file) {
-//             throw new Error("Can't start uploading: file have not chosen");
-//         }
-//
-//         const chunksQuantity = Math.ceil(this.file.size / this.chunkSize);
-//         this.chunksQueue = new Array(chunksQuantity).fill(null).map((_, index) => index).reverse();
-//
-//         const xhr = new XMLHttpRequest();
-//
-//         xhr.open("post", "/upload/init");
-//
-//         xhr.setRequestHeader("X-Content-Length", this.file.size);
-//         xhr.setRequestHeader("X-Content-Name", this.file.name);
-//         xhr.setRequestHeader("X-Chunks-Quantity", chunksQuantity);
-//
-//         xhr.onreadystatechange = () => {
-//             if (xhr.readyState === 4 && xhr.status === 200) {
-//                 const response = JSON.parse(xhr.responseText);
-//
-//                 if (!response.fileId || response.status !== 200) {
-//                     this.complete(new Error("Can't create file id"));
-//                     return;
-//                 }
-//
-//                 this.fileId = response.fileId;
-//                 this.sendNext();
-//             }
-//         };
-//
-//         xhr.onerror = (error) => {
-//             this.complete(error);
-//         };
-//
-//         xhr.send();
-//     }
-//
-//     Uploader.prototype.sendNext = function() {
-//         const activeConnections = Object.keys(this.activeConnections).length;
-//
-//         if (activeConnections >= this.threadsQuantity) {
-//             return;
-//         }
-//
-//         if (!this.chunksQueue.length) {
-//             if (!activeConnections) {
-//                 this.complete(null);
-//             }
-//
-//             return;
-//         }
-//
-//         const chunkId = this.chunksQueue.pop();
-//         const sentSize = chunkId * this.chunkSize;
-//         const chunk = this.file.slice(sentSize, sentSize + this.chunkSize);
-//
-//         this.sendChunk(chunk, chunkId)
-//             .then(() => {
-//                 this.sendNext();
-//             })
-//             .catch((error) => {
-//                 this.chunksQueue.push(chunkId);
-//
-//                 this.complete(error);
-//             });
-//
-//         this.sendNext();
-//     }
-//
-//     Uploader.prototype.complete = function(error) {
-//         if (error && !this.aborted) {
-//             this.end(error);
-//             return;
-//         }
-//
-//         setTimeout(() => init());
-//
-//         this.end(error);
-//     }
-//
-//     Uploader.prototype.sendChunk = function(chunk, id) {
-//         return new Promise(async (resolve, reject) => {
-//             try {
-//                 const response = await this.upload(chunk, id);
-//                 const {status, size} = JSON.parse(response);
-//
-//                 if (status !== 200 || size !== chunk.size) {
-//                     reject(new Error("Failed chunk upload"));
-//                     return;
-//                 }
-//             } catch (error) {
-//                 reject(error);
-//                 return;
-//             }
-//
-//             resolve();
-//         })
-//     }
-//
-//     Uploader.prototype.handleProgress = function(chunkId, event) {
-//         if (event.type === "progress" || event.type === "error" || event.type === "abort") {
-//             this.progressCache[chunkId] = event.loaded;
-//         }
-//
-//         if (event.type === "loadend") {
-//             this.uploadedSize += this.progressCache[chunkId] || 0;
-//             delete this.progressCache[chunkId];
-//         }
-//
-//         const inProgress = Object.keys(this.progressCache).reduce((memo, id) => memo += this.progressCache[id], 0);
-//
-//         const sendedLength = Math.min(this.uploadedSize + inProgress, this.file.size);
-//
-//         this.onProgress({
-//             loaded: sendedLength,
-//             total: this.file.size
-//         })
-//     }
-//
-//     Uploader.prototype.upload = function(file, id) {
-//         return new Promise((resolve, reject) => {
-//             const xhr = this.activeConnections[id] = new XMLHttpRequest();
-//             const progressListener = this.handleProgress.bind(this, id);
-//
-//             xhr.upload.addEventListener("progress", progressListener);
-//
-//             xhr.addEventListener("error", progressListener);
-//             xhr.addEventListener("abort", progressListener);
-//             xhr.addEventListener("loadend", progressListener);
-//
-//             xhr.open("post", "/upload");
-//
-//             xhr.setRequestHeader("Content-Type", "application/octet-stream");
-//             xhr.setRequestHeader("Content-Length", file.size);
-//             xhr.setRequestHeader("X-Content-Id", this.fileId);
-//             xhr.setRequestHeader("X-Chunk-Id", id);
-//
-//             xhr.onreadystatechange = (event) => {
-//                 if (xhr.readyState === 4 && xhr.status === 200) {
-//                     resolve(xhr.responseText);
-//                     delete this.activeConnections[id];
-//                 }
-//             };
-//
-//             xhr.onerror = (error) => {
-//                 reject(error);
-//                 delete this.activeConnections[id];
-//             };
-//
-//             xhr.onabort = () => {
-//                 reject(new Error("Upload canceled by user"));
-//                 delete this.activeConnections[id];
-//             };
-//
-//             xhr.send(file);
-//         })
-//     }
-//
-//     Uploader.prototype.on = function(method, callback) {
-//         if (typeof callback !== "function") {
-//             callback = () => {};
-//         }
-//
-//         this[method] = callback;
-//     }
-//
-//     Uploader.prototype.abort = function() {
-//         Object.keys(this.activeConnections).forEach((id) => {
-//             this.activeConnections[id].abort();
-//         });
-//
-//         this.aborted = true;
-//     }
-//
-//     const multithreadedUploader = new Uploader();
-//
-//     return {
-//         options: function (options) {
-//             multithreadedUploader.setOptions(options);
-//
-//             return this;
-//         },
-//         send: function (file) {
-//             multithreadedUploader.setupFile(file);
-//
-//             return this;
-//         },
-//         continue: function () {
-//             multithreadedUploader.sendNext();
-//         },
-//         onProgress: function (callback) {
-//             multithreadedUploader.on("onProgress", callback);
-//
-//             return this;
-//         },
-//         end: function (callback) {
-//             multithreadedUploader.on("end", callback);
-//             multithreadedUploader.start();
-//
-//             return this;
-//         },
-//         abort: function () {
-//             multithreadedUploader.abort();
-//         }
-//     }
-// };
-//
-// export {uploader}
-
 import axios from "axios"
 
 // initializing axios
-const api = axios.create({
-    baseURL: "http://localhost:3000",
-})
+// const api = axios.create({
+//     baseURL: "http://localhost:3000",
+// })
 
 // original source: https://github.com/pilovm/multithreaded-uploader/blob/master/frontend/uploader.js
 class Uploader {
+    private headers: any;
     private chunkSize: number = 1024 * 1024 * 5;
-    private threadsQuantity: number=2;
+    private threadsQuantity: number = 2;
     private file: any;
     private fileName: any;
     private aborted: boolean;
     private uploadedSize: number;
-    private progressCache: {};
+    private progressCache: any;
     private activeConnections: {};
     private parts: any[];
     private uploadedParts: any[];
     private fileId: null;
     private fileKey: null;
-    private onProgressFn: () => void;
-    private onErrorFn: (error: any) => void;
-    private fileExt="";
+    private onProgressFn: any;
+    private onErrorFn:any;
+    private fileExt = "";
 
     constructor(options: { chunkSize: number; threadsQuantity: any; file: any; fileName: any; }) {
         // this must be bigger than or equal to 5MB,
@@ -277,8 +41,14 @@ class Uploader {
         this.uploadedParts = []
         this.fileId = null
         this.fileKey = null
-        this.onProgressFn = () => {}
-        this.onErrorFn = () => {}
+        this.onProgressFn = ():any => {
+        }
+        this.onErrorFn = () => {
+        }
+        // this.headers =
+        //     {
+        //         'Content-Type': "video/mp4"
+        //     };
     }
 
     // starting the multipart upload request
@@ -289,6 +59,7 @@ class Uploader {
     async initialize() {
         try {
             // adding the the file extension (if present) to fileName
+            console.log(this.fileName)
             let fileName = this.fileName
             // const ext = this.file.name.split(".").pop()
             // if (ext) {
@@ -298,15 +69,13 @@ class Uploader {
 
             // initializing the multipart request
             const videoInitializationUploadInput = {
-                name: fileName,
+                path: fileName,
             }
-            const initializeReponse = await api.request({
-                url: "http://localhost:8080/api/v1/v/upload/initializeMultipartUpload",
-                method: "POST",
-                data: videoInitializationUploadInput,
-            })
-
-            const AWSFileDataOutput = initializeReponse.data
+            const initializeResponse = await axios.post(
+                "http://localhost:8080/api/v1/v/upload/initializeMultipartUpload",
+                videoInitializationUploadInput,
+            )
+            const AWSFileDataOutput = initializeResponse.data
 
             this.fileId = AWSFileDataOutput.fileId
             this.fileKey = AWSFileDataOutput.fileKey
@@ -320,12 +89,11 @@ class Uploader {
                 parts: numberOfparts,
             }
 
-            const urlsResponse = await api.request({
-                url: "http://localhost:8080/api/v1/v/upload/getMultipartPreSignedUrls",
-                method: "POST",
-                data: AWSMultipartFileDataInput,
-            })
-
+            const urlsResponse = await axios.post(
+                "http://localhost:8080/api/v1/v/upload/getMultipartPreSignedUrls",
+                AWSMultipartFileDataInput
+            )
+            console.log("URL RESPONSE PARTS: ", urlsResponse.data.parts)
             const newParts = urlsResponse.data.parts
             this.parts.push(...newParts)
 
@@ -372,7 +140,7 @@ class Uploader {
     }
 
     // terminating the multipart upload request on success or failure
-    async complete(error:any=null) {
+    async complete(error: any = null) {
         if (error && !this.aborted) {
             this.onErrorFn(error)
             return
@@ -399,12 +167,21 @@ class Uploader {
                 fileKey: this.fileKey,
                 parts: this.uploadedParts,
             }
+            debugger;
+            try {
+                let result = await axios.post(
+                    "http://localhost:8080/api/v1/v/upload/finalizeMultipartUpload",
+                    videoFinalizationMultiPartInput,
+                )
+                console.log("send complete uploading data")
+                await axios.post(
+                    result.data.uploadcompletedata,
+                )
+            } catch (error) {
+                console.log("error in sending finalizeMultipartUpload: ", error)
+            }
 
-            await api.request({
-                url: "http://localhost:8080/api/v1/v/upload/finalizeMultipartUpload",
-                method: "POST",
-                data: videoFinalizationMultiPartInput,
-            })
+
         }
     }
 
@@ -416,7 +193,6 @@ class Uploader {
                         reject(new Error("Failed chunk upload"))
                         return
                     }
-
                     resolve()
                 })
                 .catch((error) => {
@@ -429,21 +205,17 @@ class Uploader {
     handleProgress(part: string | number, event: { type: string; loaded: any; }) {
         if (this.file) {
             if (event.type === "progress" || event.type === "error" || event.type === "abort") {
-                // @ts-ignore
                 this.progressCache[part] = event.loaded
             }
 
             if (event.type === "uploaded") {
-                // @ts-ignore
                 this.uploadedSize += this.progressCache[part] || 0
-                // @ts-ignore
                 delete this.progressCache[part]
             }
 
 
             const inProgress = Object.keys(this.progressCache)
                 .map(Number)
-                // @ts-ignore
                 .reduce((memo, id) => (memo += this.progressCache[id]), 0)
 
             const sent = Math.min(this.uploadedSize + inProgress, this.file.size)
@@ -451,7 +223,6 @@ class Uploader {
             const total = this.file.size
 
             const percentage = Math.round((sent / total) * 100)
-            // @ts-ignore
             this.onProgressFn({
                 sent: sent,
                 total: total,
@@ -461,7 +232,7 @@ class Uploader {
     }
 
     // uploading a part through its pre-signed URL
-    upload(file:File, part:any, sendChunkStarted:any) {
+    upload(file: File, part: any, sendChunkStarted: any) {
         // uploading each part with its pre-signed URL
         return new Promise((resolve, reject) => {
             if (this.fileId && this.fileKey) {
@@ -480,6 +251,7 @@ class Uploader {
                 xhr.addEventListener("loadend", progressListener)
 
                 xhr.open("PUT", part.signedUrl)
+                xhr.setRequestHeader('Content-Type', 'video/mp4')
 
                 xhr.onreadystatechange = () => {
                     if (xhr.readyState === 4 && xhr.status === 200) {
@@ -520,7 +292,7 @@ class Uploader {
         })
     }
 
-    onProgress(onProgress: () => void) {
+    onProgress(onProgress:any) {
         this.onProgressFn = onProgress
         return this
     }

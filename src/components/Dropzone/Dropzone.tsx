@@ -61,7 +61,7 @@ const Dropzone = (props: any) => {
                 .then(async (response: any) => {
                     console.log("success with signed url post")
                     console.log("2: File Type at this point: ", response)
-                    debugger;
+                    // debugger;
                     let returnData = response.data;
                     console.log("Returned Data to filename: ", returnData)
                     let newFileName = returnData.filePath;
@@ -87,7 +87,7 @@ const Dropzone = (props: any) => {
                         }
                     };
                     console.log("Sending file to url directly")
-                    debugger;
+                    // debugger;
                     let percentage = 0
                     let videoUploaderOptions = {
                         fileName: newFileName,
@@ -95,22 +95,35 @@ const Dropzone = (props: any) => {
                         chunkSize: 1024 * 1024 * 5,
                         threadsQuantity: 5
                     }
+                    console.log("Creating Uploader")
                     const uploader = new Uploader(videoUploaderOptions)
                     setUploader(uploader)
+                    debugger;
+
                     uploader
-                    // @ts-ignore
-                        .onProgress(({ percentage: newPercentage }) => {
+                        .onProgress(({percentage: newPercentage}:{percentage:any, newPercentage:any}) => {
                             // to avoid the same percentage to be logged twice
                             if (newPercentage !== percentage) {
                                 percentage = newPercentage
                                 console.log(`${percentage}%`)
                             }
+                            if (newPercentage === 100) {
+                                console.log('File completed uploading at 100%')
+
+                            }
                         })
-                        .onError((error:any) => {
-                            console.error(error)
+                        .onError((error: any) => {
+                            console.error("Error displaying progress", error)
                         })
 
                     uploader.start()
+
+                    const onCancel = () => {
+                        if (uploader) {
+                            uploader.abort()
+                            // setFile(undefined)
+                        }
+                    }
 
 
                     // axios.put(url, renamedFile, options)
@@ -128,7 +141,7 @@ const Dropzone = (props: any) => {
                     //     })
                 })
         } catch (err) {
-            console.log(err)
+            console.log("Error In like upload bit:",err)
         }
 
     }

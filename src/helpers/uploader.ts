@@ -261,7 +261,7 @@ class Uploader {
                         if (ETag) {
                             const uploadedPart = {
                                 PartNumber: part.PartNumber,
-                                // removing the " enclosing carachters from
+                                // removing the " enclosing characters from
                                 // the raw ETag
                                 ETag: ETag.replaceAll('"', ""),
                             }

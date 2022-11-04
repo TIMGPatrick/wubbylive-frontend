@@ -15,7 +15,7 @@ class Uploader {
     private aborted: boolean;
     private uploadedSize: number;
     private progressCache: any;
-    private activeConnections: {};
+    private activeConnections: any;
     private parts: any[];
     private uploadedParts: any[];
     private fileId: null;
@@ -23,6 +23,7 @@ class Uploader {
     private onProgressFn: any;
     private onErrorFn: any;
     private fileExt = "";
+    private startTime: number;
 
     constructor(options: { chunkSize: number; threadsQuantity: any; file: any; fileName: any; }) {
         // this must be bigger than or equal to 5MB,
@@ -45,6 +46,7 @@ class Uploader {
         }
         this.onErrorFn = () => {
         }
+        this.startTime = 0;
         // this.headers =
         //     {
         //         'Content-Type': "video/mp4"
@@ -58,6 +60,7 @@ class Uploader {
 
     async initialize() {
         try {
+            this.startTime = Date.now()
             // adding the the file extension (if present) to fileName
             console.log(this.fileName)
             let fileName = this.fileName
@@ -96,7 +99,6 @@ class Uploader {
             console.log("URL RESPONSE PARTS: ", urlsResponse.data.parts)
             const newParts = urlsResponse.data.parts
             this.parts.push(...newParts)
-
             this.sendNext()
         } catch (error) {
             await this.complete(error)
@@ -112,6 +114,7 @@ class Uploader {
 
         if (!this.parts.length) {
             if (!activeConnections) {
+                console.log("Complete from underneath active connections check")
                 this.complete()
             }
 
@@ -124,32 +127,38 @@ class Uploader {
             const chunk = this.file.slice(sentSize, sentSize + this.chunkSize)
 
             const sendChunkStarted = () => {
+                console.log("sendChunkStarted reached")
                 this.sendNext()
             }
 
             this.sendChunk(chunk, part, sendChunkStarted)
                 .then(() => {
+                    console.log("sendNext")
+
                     this.sendNext()
                 })
-                .catch((error) => {
+                .catch(async (error) => {
                     this.parts.push(part)
-
-                    this.complete(error)
+                    console.log("This complete at error point:")
+                    await this.complete(error)
                 })
         }
     }
 
     // terminating the multipart upload request on success or failure
-    async complete(error: any = null) {
+    async complete(error: any = undefined) {
+        debugger;
         if (error && !this.aborted) {
             this.onErrorFn(error)
             return
         }
+        debugger;
 
         if (error) {
             this.onErrorFn(error)
             return
         }
+        debugger;
 
         try {
             await this.sendCompleteRequest()
@@ -161,19 +170,23 @@ class Uploader {
     // finalizing the multipart upload request on success by calling
     // the finalization API
     async sendCompleteRequest() {
+        debugger;
         if (this.fileId && this.fileKey) {
             const videoFinalizationMultiPartInput = {
                 fileId: this.fileId,
                 fileKey: this.fileKey,
                 parts: this.uploadedParts,
             }
-            debugger;
             try {
+                console.log("Fetching finalise multipartupload url")
                 let result = await axios.post(
                     "http://localhost:8080/api/v1/v/upload/finalizeMultipartUpload",
                     videoFinalizationMultiPartInput,
                 )
-                console.log("send complete uploading data")
+                console.log("completed uploading data: ", result.data.uploadcompletedata)
+                console.log("Complete")
+                console.log("Duration: ", this.startTime - Date.now())
+                debugger;
                 await axios.post(
                     result.data.uploadcompletedata,
                 )
@@ -237,7 +250,6 @@ class Uploader {
         return new Promise((resolve, reject) => {
             if (this.fileId && this.fileKey) {
                 // - 1 because PartNumber is an index starting from 1 and not 0
-                // @ts-ignore
                 const xhr = (this.activeConnections[part.PartNumber - 1] = new XMLHttpRequest())
 
                 sendChunkStarted()
@@ -269,7 +281,6 @@ class Uploader {
                             this.uploadedParts.push(uploadedPart)
 
                             resolve(xhr.status)
-                            // @ts-ignore
                             delete this.activeConnections[part.PartNumber - 1]
                         }
                     }
@@ -277,13 +288,11 @@ class Uploader {
 
                 xhr.onerror = (error) => {
                     reject(error)
-                    // @ts-ignore
                     delete this.activeConnections[part.PartNumber - 1]
                 }
 
                 xhr.onabort = () => {
                     reject(new Error("Upload canceled by user"))
-                    // @ts-ignore
                     delete this.activeConnections[part.PartNumber - 1]
                 }
 
@@ -303,11 +312,15 @@ class Uploader {
         return this
     }
 
+
+    //TODO: Add abort/cancel button immediately as need to be able to cancel uploads
+    // finalising uploads does not seem to be working, as it keeps the space
+    // for the file parts until that is called
+
     abort() {
         Object.keys(this.activeConnections)
             .map(Number)
             .forEach((id) => {
-                // @ts-ignore
                 this.activeConnections[id].abort()
             })
 

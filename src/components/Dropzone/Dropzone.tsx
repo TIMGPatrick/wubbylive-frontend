@@ -101,7 +101,7 @@ const Dropzone = (props: any) => {
                     debugger;
 
                     uploader
-                        .onProgress(({percentage: newPercentage}:{percentage:any, newPercentage:any}) => {
+                        .onProgress(({percentage: newPercentage}: { percentage: any, newPercentage: any }) => {
                             // to avoid the same percentage to be logged twice
                             if (newPercentage !== percentage) {
                                 percentage = newPercentage
@@ -109,7 +109,7 @@ const Dropzone = (props: any) => {
                             }
                             if (newPercentage === 100) {
                                 console.log('File completed uploading at 100%')
-
+                                uploader.complete();
                             }
                         })
                         .onError((error: any) => {
@@ -117,15 +117,6 @@ const Dropzone = (props: any) => {
                         })
 
                     uploader.start()
-
-                    const onCancel = () => {
-                        if (uploader) {
-                            uploader.abort()
-                            // setFile(undefined)
-                        }
-                    }
-
-
                     // axios.put(url, renamedFile, options)
                     //     .then(result => {
                     //         console.log("Response from s3", result)
@@ -141,9 +132,17 @@ const Dropzone = (props: any) => {
                     //     })
                 })
         } catch (err) {
-            console.log("Error In like upload bit:",err)
+            console.log("Error In like upload bit:", err)
         }
 
+    }
+
+    const onCancel = () => {
+        console.log("onCancel clicked")
+        if (uploader) {
+            uploader.abort()
+            // setFile(undefined)
+        }
     }
 
     const openFileDialog = () => {
@@ -152,20 +151,23 @@ const Dropzone = (props: any) => {
     }
 
     return (
-        <div onClick={openFileDialog} style={{cursor: props.disabled ? "default" : "pointer"}}
-             className={"h-full w-full"}>
-            <div
-                className={"h-full w-full border-dashed border-radius rounded-lg bg-gray-300 border-4 flex items-center justify-center text-center content-center flex-col text-xs lg:text-2xl"}
-                id={`Dropzone ${highlight ? "Highlight" : ""}`}>
-                <FaUpload className="h-24 w-24 opacity-30"/>
-                <div>
-                    <input id="VideoInput" type="file" className={""} ref={videoInputRef}
-                           onClick={openFileDialog}
-                           onChange={onFilesAdded}
-                           accept={"video/*"}/>
+        <div>
+            <div onClick={openFileDialog} style={{cursor: props.disabled ? "default" : "pointer"}}
+                 className={"h-full w-full"}>
+                <div
+                    className={"h-full w-full border-dashed border-radius rounded-lg bg-gray-300 border-4 flex items-center justify-center text-center content-center flex-col text-xs lg:text-2xl"}
+                    id={`Dropzone ${highlight ? "Highlight" : ""}`}>
+                    <FaUpload className="h-24 w-24 opacity-30"/>
+                    <div>
+                        <input id="VideoInput" type="file" className={""} ref={videoInputRef}
+                               onClick={openFileDialog}
+                               onChange={onFilesAdded}
+                               accept={"video/*"}/>
+                    </div>
+                    <span>Upload Files</span>
                 </div>
-                <span>Upload Files</span>
             </div>
+            <button onClick={onCancel}>Abort</button>
         </div>
     );
 }

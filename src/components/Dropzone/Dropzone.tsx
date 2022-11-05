@@ -57,81 +57,80 @@ const Dropzone = (props: any) => {
                 tags: tags
             }
             console.log("hitting backend")
-            axios.post("http://localhost:8080/api/v1/v/upload/get-signed-url", data)
-                .then(async (response: any) => {
-                    console.log("success with signed url post")
-                    console.log("2: File Type at this point: ", response)
-                    // debugger;
-                    let returnData = response.data;
-                    console.log("Returned Data to filename: ", returnData)
-                    let newFileName = returnData.filePath;
-                    let newFileType = returnData.fileType;
-                    if (!fileState) {
-                        console.log("fileState is null")
-                        return
+            let response = await axios.post("http://localhost:8080/api/v1/v/upload/get-signed-url", data)
+            console.log("success with signed url post")
+            console.log("2: File Type at this point: ", response)
+            // debugger;
+            let returnData = response.data;
+            console.log("Returned Data to filename: ", returnData)
+            let newFileName = returnData.filePath;
+            let newFileType = returnData.fileType;
+            if (!fileState) {
+                console.log("fileState is null")
+                return
+            }
+            let renamedFile = renameFile(fileState, newFileName)
+            // evt.target.files[0].name = newFileName
+            url = returnData.url;
+            if (url === "") {
+                console.log("url is empty")
+                return
+            }
+
+            console.log("Received a signed request " + url);
+
+            // Put the fileType in the headers for the upload
+            const options = {
+                headers: {
+                    'Content-Type': newFileType
+                }
+            };
+            console.log("Sending file to url directly")
+            // debugger;
+            let percentage = 0
+            let videoUploaderOptions = {
+                fileName: newFileName,
+                file: renamedFile,
+                chunkSize: 1024 * 1024 * 5,
+                threadsQuantity: 5
+            }
+            console.log("Creating Uploader")
+            const uploader = new Uploader(videoUploaderOptions)
+            setUploader(uploader)
+            debugger;
+
+            uploader
+                .onProgress(({percentage: newPercentage}: { percentage: any, newPercentage: any }) => {
+                    // to avoid the same percentage to be logged twice
+                    if (newPercentage !== percentage) {
+                        percentage = newPercentage
+                        console.log(`${percentage}%`)
                     }
-                    let renamedFile = renameFile(fileState, newFileName)
-                    // evt.target.files[0].name = newFileName
-                    url = returnData.url;
-                    if (url === "") {
-                        console.log("url is empty")
-                        return
+                    if (newPercentage === 100) {
+                        console.log('File completed uploading at 100%')
+                        uploader.complete();
                     }
-
-                    console.log("Received a signed request " + url);
-
-                    // Put the fileType in the headers for the upload
-                    const options = {
-                        headers: {
-                            'Content-Type': newFileType
-                        }
-                    };
-                    console.log("Sending file to url directly")
-                    // debugger;
-                    let percentage = 0
-                    let videoUploaderOptions = {
-                        fileName: newFileName,
-                        file: renamedFile,
-                        chunkSize: 1024 * 1024 * 5,
-                        threadsQuantity: 5
-                    }
-                    console.log("Creating Uploader")
-                    const uploader = new Uploader(videoUploaderOptions)
-                    setUploader(uploader)
-                    debugger;
-
-                    uploader
-                        .onProgress(({percentage: newPercentage}: { percentage: any, newPercentage: any }) => {
-                            // to avoid the same percentage to be logged twice
-                            if (newPercentage !== percentage) {
-                                percentage = newPercentage
-                                console.log(`${percentage}%`)
-                            }
-                            if (newPercentage === 100) {
-                                console.log('File completed uploading at 100%')
-                                uploader.complete();
-                            }
-                        })
-                        .onError((error: any) => {
-                            console.error("Error displaying progress", error)
-                        })
-
-                    uploader.start()
-                    // axios.put(url, renamedFile, options)
-                    //     .then(result => {
-                    //         console.log("Response from s3", result)
-                    //         setSuccess(true);
-                    //     })
-                    //     .catch(error => {
-                    //         alert("ERROR " + JSON.stringify(error));
-                    //         console.log("Error: ", error)
-                    //     })
-                    //     .catch(error => {
-                    //         alert(JSON.stringify({error}));
-                    //         console.log(JSON.stringify({error}));
-                    //     })
                 })
-        } catch (err) {
+                .onError((error: any) => {
+                    console.error("Error displaying progress", error)
+                })
+
+            uploader.start()
+            // axios.put(url, renamedFile, options)
+            //     .then(result => {
+            //         console.log("Response from s3", result)
+            //         setSuccess(true);
+            //     })
+            //     .catch(error => {
+            //         alert("ERROR " + JSON.stringify(error));
+            //         console.log("Error: ", error)
+            //     })
+            //     .catch(error => {
+            //         alert(JSON.stringify({error}));
+            //         console.log(JSON.stringify({error}));
+            //     })
+        } catch
+            (err) {
             console.log("Error In like upload bit:", err)
         }
 

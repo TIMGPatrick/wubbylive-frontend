@@ -31,15 +31,10 @@ const App = () => {
     // }
 
     async function fetchVideo(): Promise<void> {
-        await fetch("http://localhost:8080/api/v1/v/0c7b428b-915a-493e-8237-522a16d02c41")
-            .then(response => {
-                response.json().then(data => {
-                    console.log("within the fetchVideo function: ", data);
-                    setVideo(data)
-                }).catch(err => {
-                    console.log(err)
-                });
-            });
+        let response = await fetch("http://localhost:8080/api/v1/v/0c7b428b-915a-493e-8237-522a16d02c41")
+        let data = await response.json()
+        console.log("within the fetchVideo function: ", data);
+        setVideo(data)
     }
 
     return (

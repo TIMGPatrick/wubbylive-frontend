@@ -99,13 +99,14 @@ class Uploader {
             console.log("URL RESPONSE PARTS: ", urlsResponse.data.parts)
             const newParts = urlsResponse.data.parts
             this.parts.push(...newParts)
-            this.sendNext()
+            await this.sendNext()
         } catch (error) {
             await this.complete(error)
         }
     }
 
-    sendNext() {
+    async sendNext() {
+        debugger;
         const activeConnections = Object.keys(this.activeConnections).length
 
         if (activeConnections >= this.threadsQuantity) {
@@ -115,7 +116,7 @@ class Uploader {
         if (!this.parts.length) {
             if (!activeConnections) {
                 console.log("Complete from underneath active connections check")
-                this.complete()
+                await this.complete()
             }
 
             return
@@ -125,23 +126,20 @@ class Uploader {
         if (this.file && part) {
             const sentSize = (part.PartNumber - 1) * this.chunkSize
             const chunk = this.file.slice(sentSize, sentSize + this.chunkSize)
-
-            const sendChunkStarted = () => {
-                console.log("sendChunkStarted reached")
-                this.sendNext()
-            }
-
-            this.sendChunk(chunk, part, sendChunkStarted)
-                .then(() => {
-                    console.log("sendNext")
-
+            try {
+                const sendChunkStarted = () => {
+                    console.log("sendChunkStarted reached")
                     this.sendNext()
-                })
-                .catch(async (error) => {
-                    this.parts.push(part)
-                    console.log("This complete at error point:")
-                    await this.complete(error)
-                })
+                }
+
+                await this.sendChunk(chunk, part, sendChunkStarted)
+
+                await this.sendNext()
+            } catch (error) {
+                this.parts.push(part)
+                console.log("This complete at error point:")
+                await this.complete(error)
+            }
         }
     }
 
@@ -198,19 +196,18 @@ class Uploader {
         }
     }
 
-    sendChunk(chunk: any, part: any, sendChunkStarted: () => void) {
-        return new Promise<void>((resolve, reject) => {
-            this.upload(chunk, part, sendChunkStarted)
-                .then((status) => {
-                    if (status !== 200) {
-                        reject(new Error("Failed chunk upload"))
-                        return
-                    }
-                    resolve()
-                })
-                .catch((error) => {
-                    reject(error)
-                })
+    async sendChunk(chunk: any, part: any, sendChunkStarted: () => void) {
+        return new Promise<void>(async (resolve, reject) => {
+            try {
+                let status = await this.upload(chunk, part, sendChunkStarted)
+                if (status !== 200) {
+                    reject(new Error("Failed chunk upload"))
+                    return
+                }
+                resolve()
+            } catch (error) {
+                reject(error)
+            }
         })
     }
 
@@ -250,7 +247,9 @@ class Uploader {
         return new Promise((resolve, reject) => {
             if (this.fileId && this.fileKey) {
                 // - 1 because PartNumber is an index starting from 1 and not 0
+                console.log("Active Connections Before: ", this.activeConnections)
                 const xhr = (this.activeConnections[part.PartNumber - 1] = new XMLHttpRequest())
+                console.log("Active Connections After: ", this.activeConnections)
 
                 sendChunkStarted()
 

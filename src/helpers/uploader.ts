@@ -246,97 +246,69 @@ class Uploader {
         // uploading each part with its pre-signed URL
         return new Promise(async (resolve, reject) => {
             if (this.fileId && this.fileKey) {
-                let requester: Axios = (this.activeConnections[part.PartNumber - 1] = axios.create({
-                    baseURL: part.signedUrl,
-                    headers: this.headers
-                }))
-                let response = await requester.put(part.signedUrl, chunk, this.headers)
-                const ETag = response.headers.ETag
-                console.log("ETag",ETag)
-                console.log("response: ", response)
-                if (ETag) {
-                    const uploadedPart = {
-                        PartNumber: part.PartNumber,
-                        // removing the " enclosing characters from
-                        // the raw ETag
-                        ETag: ETag.replaceAll('"', ""),
+
+                // - 1 because PartNumber is an index starting from 1 and not 0
+                console.log("Active Connections Before: ", this.activeConnections)
+                const xhr = (this.activeConnections[part.PartNumber - 1] = new XMLHttpRequest())
+                console.log("Active Connections After: ", this.activeConnections)
+
+                sendChunkStarted()
+
+                const progressListener = this.handleProgress.bind(this, part.PartNumber - 1)
+
+                xhr.upload.addEventListener("progress", progressListener)
+
+                xhr.addEventListener("error", progressListener)
+                xhr.addEventListener("abort", progressListener)
+                xhr.addEventListener("loadend", progressListener)
+
+                xhr.open("PUT", part.signedUrl)
+                xhr.setRequestHeader('Content-Type', 'video/mp4')
+
+                xhr.onreadystatechange = () => {
+                    if (xhr.readyState === 4 && xhr.status === 200) {
+                        console.log("xhr request headers:", xhr.getAllResponseHeaders())
+                        // retrieving the ETag parameter from the HTTP headers
+                        const ETag = xhr.getResponseHeader("ETag")
+
+                        if (ETag) {
+                            const uploadedPart = {
+                                PartNumber: part.PartNumber,
+                                // removing the " enclosing characters from
+                                // the raw ETag
+                                ETag: ETag.replaceAll('"', ""),
+                            }
+
+                            this.uploadedParts.push(uploadedPart)
+
+                            resolve(xhr.status)
+                            delete this.activeConnections[part.PartNumber - 1]
+                        }
                     }
+                }
 
-                    this.uploadedParts.push(uploadedPart)
-
-                    resolve(response.status)
+                xhr.onerror = (error) => {
+                    reject(error)
                     delete this.activeConnections[part.PartNumber - 1]
                 }
-                if (response.status != 200) {
+
+                xhr.onabort = () => {
                     reject(new Error("Upload canceled by user"))
                     delete this.activeConnections[part.PartNumber - 1]
                 }
+
+                xhr.send(chunk)
             }
         })
-
-        //
-        //         // - 1 because PartNumber is an index starting from 1 and not 0
-        //         console.log("Active Connections Before: ", this.activeConnections)
-        //         const xhr = (this.activeConnections[part.PartNumber - 1] = new XMLHttpRequest())
-        //         console.log("Active Connections After: ", this.activeConnections)
-        //
-        //         sendChunkStarted()
-        //
-        //         const progressListener = this.handleProgress.bind(this, part.PartNumber - 1)
-        //
-        //         xhr.upload.addEventListener("progress", progressListener)
-        //
-        //         xhr.addEventListener("error", progressListener)
-        //         xhr.addEventListener("abort", progressListener)
-        //         xhr.addEventListener("loadend", progressListener)
-        //
-        //         xhr.open("PUT", part.signedUrl)
-        //         xhr.setRequestHeader('Content-Type', 'video/mp4')
-        //
-        //         xhr.onreadystatechange = () => {
-        //             if (xhr.readyState === 4 && xhr.status === 200) {
-        //                 console.log("xhr request headers:", xhr.getAllResponseHeaders())
-        //                 // retrieving the ETag parameter from the HTTP headers
-        //                 const ETag = xhr.getResponseHeader("ETag")
-        //
-        //                 if (ETag) {
-        //                     const uploadedPart = {
-        //                         PartNumber: part.PartNumber,
-        //                         // removing the " enclosing characters from
-        //                         // the raw ETag
-        //                         ETag: ETag.replaceAll('"', ""),
-        //                     }
-        //
-        //                     this.uploadedParts.push(uploadedPart)
-        //
-        //                     resolve(xhr.status)
-        //                     delete this.activeConnections[part.PartNumber - 1]
-        //                 }
-        //             }
-        //         }
-        //
-        //         xhr.onerror = (error) => {
-        //             reject(error)
-        //             delete this.activeConnections[part.PartNumber - 1]
-        //         }
-        //
-        //         xhr.onabort = () => {
-        //             reject(new Error("Upload canceled by user"))
-        //             delete this.activeConnections[part.PartNumber - 1]
-        //         }
-        //
-        //         xhr.send(chunk)
-        //     }
-        // })
     }
 
 
-    onProgress(onProgress: any) {
+    onProgress(onProgress:any) {
         this.onProgressFn = onProgress
         return this
     }
 
-    onError(onError: any) {
+    onError(onError:any) {
         this.onErrorFn = onError
         return this
     }

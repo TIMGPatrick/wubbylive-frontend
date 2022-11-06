@@ -267,6 +267,7 @@ class Uploader {
                 xhr.onreadystatechange = () => {
                     if (xhr.readyState === 4 && xhr.status === 200) {
                         console.log("xhr response headers:", xhr.getAllResponseHeaders())
+                        console.log("xhr object: ", xhr)
                         // retrieving the ETag parameter from the HTTP headers
                         const ETag = xhr.getResponseHeader("ETag")
 

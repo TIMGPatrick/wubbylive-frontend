@@ -18,7 +18,7 @@ class Uploader {
     private activeConnections: any;
     private parts: any[];
     private uploadedParts: any[];
-    private fileId: null;
+    private uploadId: null;
     private fileKey: null;
     private onProgressFn: any;
     private onErrorFn: any;
@@ -40,7 +40,7 @@ class Uploader {
         this.activeConnections = {}
         this.parts = []
         this.uploadedParts = []
-        this.fileId = null
+        this.uploadId = null
         this.fileKey = null
         this.onProgressFn = (): any => {
         }
@@ -81,14 +81,14 @@ class Uploader {
             )
             const AWSFileDataOutput = initializeResponse.data
 
-            this.fileId = AWSFileDataOutput.fileId
+            this.uploadId = AWSFileDataOutput.uploadId
             this.fileKey = AWSFileDataOutput.fileKey
 
             // retrieving the pre-signed URLs
             const numberOfparts = Math.ceil(this.file.size / this.chunkSize)
 
             const AWSMultipartFileDataInput = {
-                fileId: this.fileId,
+                fileId: this.uploadId,
                 fileKey: this.fileKey,
                 parts: numberOfparts,
             }
@@ -170,9 +170,9 @@ class Uploader {
     // the finalization API
     async sendCompleteRequest() {
         debugger;
-        if (this.fileId && this.fileKey) {
+        if (this.uploadId && this.fileKey) {
             const videoFinalizationMultiPartInput = {
-                fileId: this.fileId,
+                upload: this.uploadId,
                 fileKey: this.fileKey,
                 parts: this.uploadedParts,
             }
@@ -247,7 +247,7 @@ class Uploader {
     upload(chunk: File, part: any, sendChunkStarted: any) {
         // uploading each part with its pre-signed URL
         return new Promise(async (resolve, reject) => {
-            if (this.fileId && this.fileKey) {
+            if (this.uploadId && this.fileKey) {
                 // - 1 because PartNumber is an index starting from 1 and not 0
                 console.log("Active Connections Before: ", this.activeConnections)
                 const xhr = (this.activeConnections[part.PartNumber - 1] = new XMLHttpRequest())

@@ -60,6 +60,7 @@ class Uploader {
 
     async initialize() {
         try {
+            debugger;
             this.startTime = Date.now()
             // adding the the file extension (if present) to fileName
             console.log(this.fileName)
@@ -122,7 +123,7 @@ class Uploader {
             return
         }
 
-        const part = this.parts.pop()
+        let part = this.parts.pop()
         if (this.file && part) {
             const sentSize = (part.PartNumber - 1) * this.chunkSize
             const chunk = this.file.slice(sentSize, sentSize + this.chunkSize)
@@ -246,12 +247,11 @@ class Uploader {
         // uploading each part with its pre-signed URL
         return new Promise(async (resolve, reject) => {
             if (this.fileId && this.fileKey) {
-
                 // - 1 because PartNumber is an index starting from 1 and not 0
                 console.log("Active Connections Before: ", this.activeConnections)
                 const xhr = (this.activeConnections[part.PartNumber - 1] = new XMLHttpRequest())
                 console.log("Active Connections After: ", this.activeConnections)
-
+                debugger;
                 sendChunkStarted()
 
                 const progressListener = this.handleProgress.bind(this, part.PartNumber - 1)
@@ -264,10 +264,9 @@ class Uploader {
 
                 xhr.open("PUT", part.signedUrl)
                 xhr.setRequestHeader('Content-Type', 'video/mp4')
-
                 xhr.onreadystatechange = () => {
                     if (xhr.readyState === 4 && xhr.status === 200) {
-                        console.log("xhr request headers:", xhr.getAllResponseHeaders())
+                        console.log("xhr response headers:", xhr.getAllResponseHeaders())
                         // retrieving the ETag parameter from the HTTP headers
                         const ETag = xhr.getResponseHeader("ETag")
 
@@ -281,11 +280,13 @@ class Uploader {
 
                             this.uploadedParts.push(uploadedPart)
 
+
                             resolve(xhr.status)
                             delete this.activeConnections[part.PartNumber - 1]
                         }
                     }
                 }
+                console.log("Xhr response text: ", xhr.responseText)
 
                 xhr.onerror = (error) => {
                     reject(error)
@@ -303,12 +304,12 @@ class Uploader {
     }
 
 
-    onProgress(onProgress:any) {
+    onProgress(onProgress: any) {
         this.onProgressFn = onProgress
         return this
     }
 
-    onError(onError:any) {
+    onError(onError: any) {
         this.onErrorFn = onError
         return this
     }

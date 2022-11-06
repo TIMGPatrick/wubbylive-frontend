@@ -186,9 +186,10 @@ class Uploader {
                 console.log("Complete")
                 console.log("Duration: ", this.startTime - Date.now())
                 debugger;
-                await axios.post(
-                    result.data.uploadcompletedata,
-                )
+                console.log("video upload complete")
+                // await axios.post(
+                //     result.data.finalisedUpload
+                // )
             } catch (error) {
                 console.log("error in sending finalizeMultipartUpload: ", error)
             }

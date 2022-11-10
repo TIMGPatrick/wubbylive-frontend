@@ -91,7 +91,7 @@ const Dropzone = (props: any) => {
             let videoUploaderOptions = {
                 fileName: newFileName,
                 file: renamedFile,
-                chunkSize: 1024 * 1024 * 5,
+                chunkSize: 1024 ** 2 * 5,
                 threadsQuantity: 5
             }
             console.log("Creating Uploader")
@@ -106,10 +106,10 @@ const Dropzone = (props: any) => {
                         percentage = newPercentage
                         console.log(`${percentage}%`)
                     }
-                    if (newPercentage === 100) {
-                        console.log('File completed uploading at 100%')
-                        uploader.complete();
-                    }
+                    // if (newPercentage === 100) {
+                    //     console.log('File completed uploading at 100%')
+                    //     uploader.complete();
+                    // }
                 })
                 .onError((error: any) => {
                     console.error("Error displaying progress", error)

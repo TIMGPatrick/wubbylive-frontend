@@ -8,8 +8,8 @@ import axios, {Axios} from "axios"
 // original source: https://github.com/pilovm/multithreaded-uploader/blob/master/frontend/uploader.js
 class Uploader {
     private headers: any;
-    private chunkSize: number = 1024 * 1024 * 5;
-    private threadsQuantity: number = 2;
+    private chunkSize: number;
+    private threadsQuantity: number;
     private file: any;
     private fileName: any;
     private aborted: boolean;
@@ -29,7 +29,8 @@ class Uploader {
         // this must be bigger than or equal to 5MB,
         // otherwise AWS will respond with:
         // "Your proposed upload is smaller than the minimum allowed size"
-        this.chunkSize = options.chunkSize || 1024 * 1024 * 5
+        // this.chunkSize = options.chunkSize || 1024 ** 2 * 5
+        this.chunkSize = options.chunkSize
         // number of parallel uploads
         this.threadsQuantity = Math.min(options.threadsQuantity || 5, 15)
         this.file = options.file
@@ -86,6 +87,9 @@ class Uploader {
 
             // retrieving the pre-signed URLs
             const numberOfparts = Math.ceil(this.file.size / this.chunkSize)
+            console.log("chunk size: ",Math.ceil(this.file.size / this.chunkSize))
+            console.log("the local file size",this.file.size / 1024 ** 2)
+
 
             const AWSMultipartFileDataInput = {
                 fileId: this.uploadId,
@@ -126,6 +130,7 @@ class Uploader {
         let part = this.parts.pop()
         if (this.file && part) {
             const sentSize = (part.PartNumber - 1) * this.chunkSize
+            console.log("Sent Size: ", sentSize)
             const chunk = this.file.slice(sentSize, sentSize + this.chunkSize)
             try {
                 const sendChunkStarted = () => {
@@ -172,21 +177,23 @@ class Uploader {
         debugger;
         if (this.uploadId && this.fileKey) {
             const videoFinalizationMultiPartInput = {
-                upload: this.uploadId,
+                uploadId: this.uploadId,
                 fileKey: this.fileKey,
                 parts: this.uploadedParts,
             }
+            console.log("This.UploadedParts: ",this.uploadedParts )
             try {
                 console.log("Fetching finalise multipartupload url")
                 let result = await axios.post(
                     "http://localhost:8080/api/v1/v/upload/finaliseMultipartUpload",
                     videoFinalizationMultiPartInput,
                 )
-                console.log("completed uploading data: ", result.data.uploadcompletedata)
+                console.log("completed uploading data: ", result.data.finalisedUpload)
                 console.log("Complete")
                 console.log("Duration: ", this.startTime - Date.now())
                 debugger;
                 console.log("video upload complete")
+                console.log(result)
                 // await axios.post(
                 //     result.data.finalisedUpload
                 // )
@@ -201,6 +208,7 @@ class Uploader {
     async sendChunk(chunk: any, part: any, sendChunkStarted: () => void) {
         return new Promise<void>(async (resolve, reject) => {
             try {
+                console.log("File chunk to be uploaded size: ", chunk)
                 let status = await this.upload(chunk, part, sendChunkStarted)
                 if (status !== 200) {
                     reject(new Error("Failed chunk upload"))
@@ -233,6 +241,7 @@ class Uploader {
             const sent = Math.min(this.uploadedSize + inProgress, this.file.size)
 
             const total = this.file.size
+            console.log("total file size: ", total)
 
             const percentage = Math.round((sent / total) * 100)
             this.onProgressFn({
@@ -300,6 +309,7 @@ class Uploader {
                     delete this.activeConnections[part.PartNumber - 1]
                 }
 
+                console.log("Sending Chunk...",chunk)
                 xhr.send(chunk)
             }
         })

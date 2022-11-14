@@ -1,3 +1,6 @@
+This is just experimenting with the video streaming idea using HLS and Dash-mpeg, with a potential use case in the future, at the moment it is mostly experimenting. It needs tidying up and proper structure and much further development on the front end design wise before it is used, for example, used for the little wubby live idea.
+
+
 # Getting Started with Create React App
 
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
